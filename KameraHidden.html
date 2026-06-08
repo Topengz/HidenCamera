@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- Status bar diubah agar serasi dengan background terang -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Kamera Pribadi</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    /* Perubahan: Background terang, teks gelap */
+    background:#f4f4f4; color:#333;
+    font-family:'Courier New',monospace;
+    height:100vh; overflow:hidden;
+    user-select:none; -webkit-user-select:none;
+  }
+  #setupScreen {
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    /* Perubahan: Background container sedikit berbeda */
+    height:100vh; background:#e0e0e0; padding:24px; gap:14px; overflow-y:auto;
+  }
+  /* Perubahan: Warna judul lebih gelap agar kontras */
+  .app-title { font-size:12px; letter-spacing:4px; color:#666; text-transform:uppercase; }
+  .big-icon { font-size:40px; }
+  /* Perubahan: Warna label seksi lebih gelap */
+  .section-label {
+    font-size:10px; letter-spacing:3px; color:#555; text-transform:uppercase;
+    align-self:flex-start; width:100%; max-width:320px;
+  }
+  .cam-row { display:flex; gap:10px; width:100%; max-width:320px; }
+  .cam-btn {
+    /* Perubahan: Tombol background terang, border lebih gelap, teks lebih gelap */
+    flex:1; padding:12px 8px; background:#fff; border:1px solid #ccc;
+    border-radius:12px; color:#444; font-family:'Courier New',monospace;
+    font-size:11px; letter-spacing:2px; text-transform:uppercase;
+    cursor:pointer; text-align:center; transition:all 0.2s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* Perubahan: Warna seleksi disesuaikan agar serasi dengan tema terang */
+  .cam-btn.selected { background:#e6f3e6; border-color:#a5d6a7; color:#2e7d32; }
+  .cam-btn span { display:block; font-size:20px; margin-bottom:4px; }
+  
+  .duration-box {
+    /* Perubahan: Kotak durasi background terang, border gelap */
+    width:100%; max-width:320px; background:#fff; border:1px solid #ccc;
+    border-radius:12px; padding:14px 18px; display:flex; flex-direction:column; gap:12px;
+  }
+  .duration-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  /* Perubahan: Label durasi lebih gelap */
+  .duration-label { font-size:11px; color:#666; letter-spacing:1px; }
+  /* Perubahan: Nilai durasi teks gelap */
+  .duration-value { font-size:20px; color:#000; font-weight:bold; min-width:60px; text-align:right; }
+  
+  .btn-row { display:flex; gap:8px; justify-content:flex-end; }
+  .adj-btn {
+    /* Perubahan: Tombol penyesuai background terang, border gelap, teks gelap */
+    background:#f0f0f0; border:1px solid #ccc; color:#333; border-radius:8px;
+    width:36px; height:36px; font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .adj-btn:active { background:#e0e0e0; }
+  
+  .presets { display:flex; gap:8px; flex-wrap:wrap; }
+  .preset-btn {
+    /* Perubahan: Tombol preset background terang, border gelap, teks gelap */
+    background:#f9f9f9; border:1px solid #ddd; color:#555;
+    border-radius:20px; padding:5px 12px; font-size:11px;
+    font-family:'Courier New',monospace; letter-spacing:1px;
+    cursor:pointer; -webkit-tap-highlight-color:transparent;
+  }
+  .preset-btn:active { background:#e0e0e0; border-color:#bbb; color:#000; }
+  
+  .settings-box {
+    /* Perubahan: Kotak pengaturan background terang, border gelap */
+    width:100%; max-width:320px; background:#fff; border:1px solid #ccc;
+    border-radius:12px; padding:14px 18px; display:flex; flex-direction:column; gap:14px;
+  }
+  .setting-row { display:flex; align-items:center; justify-content:space-between; }
+  .setting-info { display:flex; flex-direction:column; gap:3px; }
+  /* Perubahan: Teks pengaturan lebih gelap */
+  .setting-title { font-size:11px; color:#555; letter-spacing:1px; }
+  .setting-desc { font-size:10px; color:#777; letter-spacing:0.5px; }
+  
+  .toggle {
+    /* Perubahan: Toggle background gelap saat OFF agar terlihat di bg terang */
+    width:44px; height:24px; background:#bbb; border-radius:12px;
+    position:relative; cursor:pointer; border:1px solid #aaa;
+    transition:background 0.2s; flex-shrink:0;
+    -webkit-tap-highlight-color:transparent;
+  }
+  /* Perubahan: Warna toggle ON disesuaikan */
+  .toggle.on { background:#81c784; border-color:#66bb6a; }
+  .toggle::after {
+    content:''; position:absolute; width:18px; height:18px;
+    /* Perubahan: Warna knop toggle */
+    background:#fff; border-radius:50%; top:2px; left:2px; transition:all 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { left:22px; background:#fff; }
+  
+  .start-btn {
+    /* Perubahan: Tombol mulai background sedikit gelap, teks terang agar menonjol */
+    width:100%; max-width:320px; background:#444; border:1px solid #333;
+    color:#fff; border-radius:14px; padding:16px; font-size:13px; letter-spacing:3px;
+    font-family:'Courier New',monospace; text-transform:uppercase; cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .start-btn:active { background:#222; border-color:#000; }
+  
+  /* Perubahan: Teks info lebih gelap */
+  .info-text {
+    font-size:10px; color:#666; text-align:center;
+    letter-spacing:1px; max-width:280px; line-height:1.8;
+  }
+  
+  /* Audio meter */
+  #audioMeter {
+    /* Perubahan: Meter background terang, border gelap */
+    width:100%; max-width:320px; background:#fff; border:1px solid #ccc;
+    border-radius:10px; padding:10px 14px;
+    display:none; align-items:center; gap:10px;
+  }
+  .meter-label { font-size:10px; color:#666; letter-spacing:2px; white-space:nowrap; }
+  .meter-bar-bg {
+    /* Perubahan: Background bar lebih gelap agar isi terlihat */
+    flex:1; height:8px; background:#eee; border-radius:4px; overflow:hidden;
+    border: 1px solid #ddd;
+  }
+  .meter-bar-fill {
+    height:100%; width:0%;
+    /* Perubahan: Warna gradien disesuaikan tema terang */
+    background:linear-gradient(to right,#66bb6a,#a5d6a7);
+    border-radius:4px; transition:width 0.1s;
+  }
+  
+  /* RECORD - Layar rekam tetap hitam agar fokus ke video */
+  #recordScreen {
+    display:none; height:100vh; width:100vw; background:#000; position:relative;
+  }
+  #videoEl {
+    width:100%; height:100%; object-fit:cover;
+    position:absolute; top:0; left:0; transition:opacity 0.3s;
+  }
+  #liveOverlay {
+    position:absolute; top:0; left:0; width:100%; height:100%;
+    z-index:10; background:transparent;
+  }
+  #recHud {
+    position:absolute; top:0; left:0; right:0; z-index:20; padding:14px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(to bottom,rgba(0,0,0,0.55) 0%,transparent 100%);
+  }
+  .rec-badge {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(0,0,0,0.4); border-radius:20px; padding:6px 12px;
+  }
+  .rec-dot { width:8px; height:8px; background:#f00; border-radius:50%; animation:blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+  .rec-label { font-size:11px; color:#fff; letter-spacing:2px; }
+  .rec-time { font-size:14px; color:#fff; font-weight:bold; letter-spacing:2px; }
+  .rec-cam-badge {
+    background:rgba(0,0,0,0.4); border-radius:20px;
+    padding:6px 12px; font-size:10px; color:#aaa; letter-spacing:1px;
+  }
+  
+  /* Audio indicator di HUD */
+  #audioIndicator {
+    position:absolute; top:60px; left:16px; z-index:20;
+    display:flex; align-items:center; gap:6px;
+    background:rgba(0,0,0,0.35); border-radius:16px; padding:5px 10px;
+  }
+  .audio-bars { display:flex; align-items:flex-end; gap:2px; height:14px; }
+  .audio-bar {
+    width:3px;
+    /* Perubahan: Warna bar audio disesuaikan */
+    background:#a5d6a7; border-radius:2px;
+    animation:audioAnim 0.6s ease-in-out infinite;
+  }
+  .audio-bar:nth-child(1){ height:4px; animation-delay:0s; }
+  .audio-bar:nth-child(2){ height:10px; animation-delay:0.1s; }
+  .audio-bar:nth-child(3){ height:7px; animation-delay:0.2s; }
+  .audio-bar:nth-child(4){ height:12px; animation-delay:0.15s; }
+  .audio-bar:nth-child(5){ height:5px; animation-delay:0.05s; }
+  @keyframes audioAnim {
+    0%,100%{ transform:scaleY(0.4); opacity:0.6; }
+    50%{ transform:scaleY(1); opacity:1; }
+  }
+  /* Perubahan: Warna label audio disesuaikan */
+  .audio-label { font-size:10px; color:#a5d6a7; letter-spacing:1px; }
+  
+  #recControls {
+    position:absolute; bottom:0; left:0; right:0; z-index:20;
+    padding:20px 16px 30px;
+    background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 100%);
+    display:flex; align-items:center; justify-content:center; gap:16px;
+  }
+  .stop-btn {
+    background:rgba(200,0,0,0.8); border:2px solid #f00; color:#fff;
+    border-radius:50%; width:64px; height:64px; font-size:22px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-tap-highlight-color:transparent; box-shadow:0 0 20px rgba(255,0,0,0.3);
+  }
+  .stop-btn:active { background:rgba(255,0,0,0.9); transform:scale(0.95); }
+  .hide-btn {
+    background:rgba(0,0,0,0.5); border:1px solid #333; color:#aaa;
+    border-radius:50%; width:48px; height:48px; font-size:18px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .hide-btn:active { background:rgba(30,30,30,0.8); }
+  /* Overlay hidden tetap hitam pekat */
+  #hiddenOverlay {
+    display:none; position:fixed; top:0; left:0;
+    width:100%; height:100%; background:#000; z-index:50;
+  }
+  
+  /* DONE */
+  #doneScreen {
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    /* Perubahan: Background terang */
+    height:100vh; background:#e0e0e0; padding:28px; gap:14px;
+  }
+  .done-icon { font-size:48px; }
+  /* Perubahan: Judul selesai lebih gelap */
+  .done-title { font-size:14px; letter-spacing:3px; color:#555; text-transform:uppercase; }
+  
+  .info-box {
+    /* Perubahan: Kotak info background terang, border disesuaikan */
+    width:100%; max-width:320px; background:#fff; border:1px solid #c8e6c9;
+    border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:10px;
+  }
+  .info-row { display:flex; justify-content:space-between; align-items:center; }
+  /* Perubahan: Key info lebih gelap */
+  .info-key { font-size:10px; color:#777; letter-spacing:2px; text-transform:uppercase; }
+  /* Perubahan: Value info warna hijau tua agar kontras di putih */
+  .info-val { font-size:12px; color:#2e7d32; letter-spacing:1px; }
+  
+  .save-info {
+    /* Perubahan: Kotak info simpan background terang, border hijau disesuaikan */
+    width:100%; max-width:320px; background:#e8f5e9; border:1px solid #c8e6c9;
+    border-radius:10px; padding:14px 16px; font-size:11px; color:#388e3c; line-height:1.8;
+  }
+  /* Perubahan: Warna teks tebal info simpan */
+  .save-info strong { color:#1b5e20; }
+  
+  .action-btn {
+    /* Perubahan: Tombol aksi background terang, border gelap, teks gelap */
+    width:100%; max-width:320px; background:#f4f4f4; border:1px solid #ccc; color:#333;
+    border-radius:12px; padding:14px; font-size:12px; letter-spacing:2px;
+    font-family:'Courier New',monospace; text-transform:uppercase; cursor:pointer;
+    text-align:center; text-decoration:none; display:block;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .action-btn:active { background:#e0e0e0; border-color:#bbb; }
+  /* Perubahan: Tombol utama warna hijau tua agar kontras */
+  .action-btn.primary {
+    background:#e8f5e9; border-color:#a5d6a7; color:#1b5e20; font-size:13px; padding:16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="hiddenOverlay"></div>
+
+<!-- SETUP -->
+<div id="setupScreen">
+  <div class="app-title">Kamera Pribadi</div>
+  <!-- Perubahan: Ikon disesuaikan jadi kotak putih/terang -->
+  <div class="big-icon">⬜</div>
+
+  <div class="section-label">Pilih Kamera</div>
+  <div class="cam-row">
+    <button class="cam-btn selected" id="btnBelakang" onclick="pilihKamera('belakang')">
+      <span>🔲</span>BELAKANG
+    </button>
+    <button class="cam-btn" id="btnDepan" onclick="pilihKamera('depan')">
+      <span>🤳</span>DEPAN
+    </button>
+  </div>
+
+  <div class="section-label">Durasi Rekam</div>
+  <div class="duration-box">
+    <div class="duration-row">
+      <span class="duration-label">MENIT</span>
+      <div class="btn-row">
+        <button class="adj-btn" onclick="adj('m',-1)">−</button>
+        <div class="duration-value" id="minVal">00</div>
+        <button class="adj-btn" onclick="adj('m',1)">+</button>
+      </div>
+    </div>
+    <div class="duration-row">
+      <span class="duration-label">DETIK</span>
+      <div class="btn-row">
+        <button class="adj-btn" onclick="adj('s',-5)">−</button>
+        <div class="duration-value" id="secVal">30</div>
+        <button class="adj-btn" onclick="adj('s',5)">+</button>
+      </div>
+    </div>
+    <div class="presets">
+      <button class="preset-btn" onclick="setPreset(0,30)">30d</button>
+      <button class="preset-btn" onclick="setPreset(1,0)">1m</button>
+      <button class="preset-btn" onclick="setPreset(3,0)">3m</button>
+      <button class="preset-btn" onclick="setPreset(5,0)">5m</button>
+      <button class="preset-btn" onclick="setPreset(10,0)">10m</button>
+      <button class="preset-btn" onclick="setPreset(30,0)">30m</button>
+    </div>
+    <div class="duration-row">
+      <span class="duration-label">TANPA BATAS</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Perubahan: Warna teks OFF lebih gelap -->
+        <span id="unlimitedLabel" style="font-size:11px;color:#777">OFF</span>
+        <div class="toggle" id="unlimitedToggle" onclick="toggleUnlimited()"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Pengaturan</div>
+  <div class="settings-box">
+    <div class="setting-row">
+      <div class="setting-info">
+        <span class="setting-title">IKON DI STATUS BAR</span>
+        <span class="setting-desc">Tampilkan notif "● REC" saat merekam</span>
+      </div>
+      <div class="toggle on" id="toggleStatusBar" onclick="toggleSetting('statusBar')"></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <span class="setting-title">AUTO HIDDEN SAAT DI-BACK</span>
+        <span class="setting-desc">Layar hitam otomatis saat keluar tab</span>
+      </div>
+      <div class="toggle on" id="toggleAutoHide" onclick="toggleSetting('autoHide')"></div>
+    </div>
+    <div class="setting-row">
+      <div class="setting-info">
+        <span class="setting-title">TAMPILAN KAMERA AKTIF</span>
+        <span class="setting-desc">Lihat preview kamera saat merekam</span>
+      </div>
+      <div class="toggle on" id="togglePreview" onclick="toggleSetting('preview')"></div>
+    </div>
+  </div>
+
+  <!-- Audio meter test (muncul saat dapat izin mikrofon) -->
+  <div id="audioMeter">
+    <span class="meter-label">MIC</span>
+    <div class="meter-bar-bg">
+      <div class="meter-bar-fill" id="meterFill"></div>
+    </div>
+    <!-- Perubahan: Warna status audio lebih gelap -->
+    <span id="audioStatus" style="font-size:10px;color:#777;letter-spacing:1px;">—</span>
+  </div>
+
+  <button class="start-btn" onclick="startCamera()">▶ MULAI REKAM</button>
+  <div class="info-text">
+    tap ⬛ untuk hidden · tap ▶ untuk kembali<br>
+    format: MP4 · audio: ON
+  </div>
+</div>
+
+<!-- RECORD -->
+<div id="recordScreen">
+  <video id="videoEl" autoplay playsinline muted></video>
+  <div id="liveOverlay"></div>
+  <div id="recHud">
+    <div class="rec-badge">
+      <div class="rec-dot"></div>
+      <span class="rec-label">REC</span>
+    </div>
+    <span class="rec-time" id="recTime">00:00</span>
+    <span class="rec-cam-badge" id="recCamLabel">BELAKANG</span>
+  </div>
+  <!-- Audio indicator -->
+  <div id="audioIndicator">
+    <div class="audio-bars">
+      <div class="audio-bar"></div>
+      <div class="audio-bar"></div>
+      <div class="audio-bar"></div>
+      <div class="audio-bar"></div>
+      <div class="audio-bar"></div>
+    </div>
+    <span class="audio-label">AUDIO ON</span>
+  </div>
+  <div id="recControls">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <button class="hide-btn" onclick="manualHide()">⬛</button>
+      <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1px">SEMBUNYIKAN</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <button class="stop-btn" onclick="stopRecording()">⏹</button>
+      <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1px">STOP</span>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+      <button class="hide-btn" onclick="togglePreviewBtn()" id="previewToggleBtn">👁</button>
+      <span style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:1px">PREVIEW</span>
+    </div>
+  </div>
+</div>
+
+<!-- DONE -->
+<div id="doneScreen">
+  <div class="done-icon">✅</div>
+  <div class="done-title">Rekaman Selesai</div>
+  <div class="info-box">
+    <div class="info-row">
+      <span class="info-key">Durasi</span>
+      <span class="info-val" id="doneTime">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Kamera</span>
+      <span class="info-val" id="doneCam">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Format</span>
+      <span class="info-val" id="doneFormat">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Audio</span>
+      <span class="info-val" id="doneAudio">—</span>
+    </div>
+    <div class="info-row">
+      <span class="info-key">Nama File</span>
+      <span class="info-val" id="doneFilename" style="font-size:10px;word-break:break-all;text-align:right;max-width:200px;">—</span>
+    </div>
+  </div>
+  <div class="save-info">
+    📁 Video tersimpan di:<br>
+    <strong>File Manager → Downloads</strong><br>
+    Atau: <strong>Galeri → Albums → Downloads</strong>
+  </div>
+  <a class="action-btn primary" id="downloadLink" style="display:none">⬇ SIMPAN VIDEO KE HP</a>
+  <button class="action-btn" onclick="resetApp()">↩ REKAM LAGI</button>
+</div>
+
+<script>
+  let mins=0, secs=30, unlimited=false;
+  let selectedCam='belakang';
+  let mediaRecorder, stream, chunks=[];
+  let elapsed=0, timerInterval, countdownTimeout;
+  let wakeLock=null;
+  let isHidden=false;
+  let previewOn=true;
+  let audioCtx=null, analyser=null, meterInterval=null;
+  let hasAudio=false;
+
+  const settings={ statusBar:true, autoHide:true, preview:true };
+
+  function toggleSetting(key){
+    settings[key]=!settings[key];
+    const id='toggle'+key.charAt(0).toUpperCase()+key.slice(1);
+    document.getElementById(id).classList.toggle('on',settings[key]);
+  }
+
+  function pilihKamera(cam){
+    selectedCam=cam;
+    document.getElementById('btnDepan').classList.toggle('selected',cam==='depan');
+    document.getElementById('btnBelakang').classList.toggle('selected',cam==='belakang');
+  }
+
+  function adj(type,delta){
+    if(unlimited)return;
+    if(type==='m') mins=Math.max(0,Math.min(59,mins+delta));
+    else{
+      secs=Math.max(0,Math.min(55,secs+delta));
+      secs=Math.round(secs/5)*5;
+      if(secs>=60){secs=0;mins=Math.min(59,mins+1);}
+    }
+    if(mins===0&&secs===0&&!unlimited)secs=5;
+    render();
+  }
+  function setPreset(m,s){ if(unlimited)toggleUnlimited(); mins=m;secs=s;render(); }
+  function toggleUnlimited(){
+    unlimited=!unlimited;
+    document.getElementById('unlimitedToggle').classList.toggle('on',unlimited);
+    document.getElementById('unlimitedLabel').textContent=unlimited?'ON':'OFF';
+    // Perubahan: Opacity disesuaikan untuk background terang
+    document.getElementById('minVal').style.opacity=unlimited?'0.2':'1';
+    document.getElementById('secVal').style.opacity=unlimited?'0.2':'1';
+  }
+  function render(){
+    document.getElementById('minVal').textContent=String(mins).padStart(2,'0');
+    document.getElementById('secVal').textContent=String(secs).padStart(2,'0');
+  }
+  render();
+
+  async function startCamera(){
+    if(mins===0&&secs===0&&!unlimited){alert('Atur durasi dulu ya!');return;}
+
+    const facingMode=selectedCam==='belakang'?{exact:'environment'}:{exact:'user'};
+    const facingFallback=selectedCam==='belakang'?'environment':'user';
+
+    // Minta video + audio sekaligus dengan constraint audio yang eksplisit
+    const audioConstraints={
+      echoCancellation:false,
+      noiseSuppression:false,
+      autoGainControl:true,
+      sampleRate:44100
+    };
+
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({
+        video:{facingMode,width:{ideal:1280},height:{ideal:720}},
+        audio:audioConstraints
+      });
+    }catch(e){
+      // Fallback 1: tanpa exact facingMode
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({
+          video:{facingMode:facingFallback},
+          audio:audioConstraints
+        });
+      }catch(e2){
+        // Fallback 2: audio default
+        try{
+          stream=await navigator.mediaDevices.getUserMedia({
+            video:{facingMode:facingFallback},
+            audio:true
+          });
+        }catch(e3){
+          alert('Tidak bisa akses kamera/mikrofon.\nPastikan izin sudah dibolehkan di Chrome.\n\nError: '+e3.message);
+          return;
+        }
+      }
+    }
+
+    // Cek apakah audio track ada
+    const audioTracks=stream.getAudioTracks();
+    hasAudio=audioTracks.length>0;
+
+    // Tampilkan audio indicator
+    const audioInd=document.getElementById('audioIndicator');
+    if(hasAudio){
+      audioInd.style.display='flex';
+      // Animasi audio bar hidup sesuai volume mic
+      startAudioMeter();
+    } else {
+      audioInd.style.display='none';
+    }
+
+    const vid=document.getElementById('videoEl');
+    vid.srcObject=stream;
+    previewOn=settings.preview;
+    vid.style.opacity=previewOn?'1':'0';
+    document.getElementById('previewToggleBtn').textContent=previewOn?'👁':'🙈';
+    document.getElementById('recCamLabel').textContent=selectedCam==='belakang'?'BELAKANG':'DEPAN';
+    // Perubahan: Title tetap, tapi meta status bar di head sudah disesuaikan
+    document.title=settings.statusBar?'● REC':' ';
+
+    // Pilih mime type — prioritaskan yang support audio+video
+    let mime='';
+    const types=[
+      'video/webm;codecs=vp8,opus',
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=h264,opus',
+      'video/webm;codecs=vp8,pcm',
+      'video/webm',
+      'video/mp4;codecs=avc1,mp4a.40.2',
+      'video/mp4'
+    ];
+    for(let t of types){
+      if(MediaRecorder.isTypeSupported(t)){mime=t;break;}
+    }
+
+    const mrOptions=mime?{mimeType:mime}:{};
+    try{
+      mediaRecorder=new MediaRecorder(stream,mrOptions);
+    }catch(e){
+      mediaRecorder=new MediaRecorder(stream);
+    }
+
+    chunks=[];
+    mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data);};
+    mediaRecorder.onstop=handleStop;
+    mediaRecorder.start(500); // collect tiap 500ms agar data tidak hilang
+
+    document.getElementById('setupScreen').style.display='none';
+    document.getElementById('recordScreen').style.display='block';
+
+    elapsed=0;
+    timerInterval=setInterval(()=>{elapsed++;updateRecTime();},1000);
+    if(!unlimited){
+      const total=(mins*60)+secs;
+      countdownTimeout=setTimeout(stopRecording,total*1000);
+    }
+
+    await requestWakeLock();
+    document.addEventListener('visibilitychange',handleVisibility);
+  }
+
+  // Audio meter visual
+  function startAudioMeter(){
+    try{
+      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+      analyser=audioCtx.createAnalyser();
+      analyser.fftSize=256;
+      const src=audioCtx.createMediaStreamSource(stream);
+      src.connect(analyser);
+      const dataArr=new Uint8Array(analyser.frequencyBinCount);
+      const bars=document.querySelectorAll('.audio-bar');
+
+      meterInterval=setInterval(()=>{
+        analyser.getByteFrequencyData(dataArr);
+        const avg=dataArr.slice(0,30).reduce((a,b)=>a+b,0)/30;
+        const level=Math.min(100,avg/128*100);
+        // Update tinggi bar secara dinamis
+        bars.forEach((bar,i)=>{
+          const h=Math.max(3,level*(0.5+Math.random()*0.8));
+          bar.style.height=h+'px';
+        });
+      },100);
+    }catch(e){}
+  }
+
+  function stopAudioMeter(){
+    if(meterInterval){ clearInterval(meterInterval); meterInterval=null; }
+    if(audioCtx){ audioCtx.close().catch(()=>{}); audioCtx=null; }
+  }
+
+  function handleVisibility(){
+    if(document.visibilityState==='hidden'){
+      if(settings.autoHide) showHidden(true);
+    } else {
+      showHidden(false);
+      requestWakeLock();
+    }
+  }
+
+  function showHidden(val){
+    isHidden=val;
+    document.getElementById('hiddenOverlay').style.display=val?'block':'none';
+  }
+  function manualHide(){ showHidden(true); }
+
+  document.getElementById('hiddenOverlay').addEventListener('click',()=>{
+    if(isHidden) showHidden(false);
+  });
+
+  function togglePreviewBtn(){
+    previewOn=!previewOn;
+    document.getElementById('videoEl').style.opacity=previewOn?'1':'0';
+    document.getElementById('previewToggleBtn').textContent=previewOn?'👁':'🙈';
+  }
+
+  function updateRecTime(){
+    const m=Math.floor(elapsed/60),s=elapsed%60;
+    document.getElementById('recTime').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+
+  function stopRecording(){
+    clearInterval(timerInterval);
+    clearTimeout(countdownTimeout);
+    stopAudioMeter();
+    document.removeEventListener('visibilitychange',handleVisibility);
+    showHidden(false);
+    if(mediaRecorder&&mediaRecorder.state!=='inactive') mediaRecorder.stop();
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    if(wakeLock) wakeLock.release().catch(()=>{});
+    document.title='Kamera Pribadi';
+  }
+
+  function handleStop(){
+    const mimeUsed=chunks[0]?chunks[0].type:'video/webm';
+    const blob=new Blob(chunks,{type:mimeUsed});
+    const url=URL.createObjectURL(blob);
+
+    const now=new Date();
+    const ts=`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+    const camLabel=selectedCam==='belakang'?'Belakang':'Depan';
+    // Mime type blob mungkin webm, tapi kita force ekstensi mp4 agar mudah dibuka di HP
+    const filename=`RekamPribadi_${camLabel}_${ts}.mp4`;
+
+    const m=Math.floor(elapsed/60),s=elapsed%60;
+    document.getElementById('doneTime').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    document.getElementById('doneCam').textContent=camLabel;
+    document.getElementById('doneFormat').textContent='MP4'; // Tampilan format diubah jadi MP4
+    document.getElementById('doneAudio').textContent=hasAudio?'✅ Ada suara':'❌ Tidak ada mic';
+    document.getElementById('doneFilename').textContent=filename;
+
+    const dl=document.getElementById('downloadLink');
+    dl.href=url; dl.download=filename; dl.style.display='block';
+
+    document.getElementById('recordScreen').style.display='none';
+    document.getElementById('doneScreen').style.display='flex';
+
+    // Auto click download setelah jeda singkat
+    setTimeout(()=>dl.click(),800);
+  }
+
+  function resetApp(){
+    elapsed=0; chunks=[];
+    document.removeEventListener('visibilitychange',handleVisibility);
+    stopAudioMeter();
+    document.getElementById('doneScreen').style.display='none';
+    document.getElementById('downloadLink').style.display='none';
+    document.getElementById('setupScreen').style.display='flex';
+    showHidden(false);
+    document.title='Kamera Pribadi';
+  }
+
+  async function requestWakeLock(){
+    try{
+      if('wakeLock' in navigator) wakeLock=await navigator.wakeLock.request('screen');
+    }catch(e){}
+  }
+</script>
+</body>
+</html>
